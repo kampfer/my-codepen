@@ -1,0 +1,420 @@
+<style>
+    svg {
+        border: 1px solid #ccc;
+    }
+
+    line {
+        stroke: black;
+    }
+
+    path {
+        stroke: black;
+        fill: none;
+    }
+
+    circle {
+        stroke: brown;
+        fill: brown;
+    }
+
+    circle.point {
+        stroke: none;
+        fill: black;
+    }
+
+    line.edge {
+        stroke: black;
+        fill: none;
+    }
+</style>
+
+<script src="./assets/d3.v6.js"></script>
+
+<script>
+    class Demo {
+
+        constructor({
+            width,
+            height
+        }) {
+            this.selection = d3.create('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', [0, 0, width, height]);
+
+            this.selection.on('click', this.nextFrame.bind(this));
+
+            this._frames = [];
+            this._currentFrame = -1;
+        }
+
+        addFrame(frame) {
+            this._frames.push(frame);
+            this.selection.node().appendChild(frame.selection.node());
+        }
+
+        nextFrame() {
+            this.playFrame(this._currentFrame + 1);
+        }
+
+        playFrame(i) {
+            const curFrame = this._frames[this._currentFrame];
+            const nextFrame = this._frames[i];
+
+            if (nextFrame) {
+                if (curFrame) curFrame.hide();
+                nextFrame.show();
+                if (nextFrame.play) nextFrame.play();
+                this._currentFrame = i;
+            }
+        }
+
+    }
+
+    class Frame {
+
+        constructor({
+            content,
+            play
+        }) {
+            this.selection = d3.create('svg:g')
+                .style('display', 'none');
+
+            this.play = play;
+
+            if (typeof content === 'function') {
+                this.selection.call(content);
+            }
+        }
+
+        hide() {
+            this.selection.style('display', 'none');
+        }
+
+        show() {
+            this.selection.style('display', 'unset');
+        }
+
+    }
+</script>
+
+<script>
+    function renderPoint(selection, x, y, label) {
+        selection.append('circle')
+            .classed('point', true)
+            .attr('cx', x)
+            .attr('cy', y)
+            .attr('r', 3);
+        selection.append('text')
+            .text(label)
+            .attr('x', x + 10)
+            .attr('y', y + 10)
+    }
+
+    function renderCure(selection, p0, p1, p2, arrow="#arrow") {
+        selection.append('path')
+            .classed('curve', true)
+            .attr('marker-end', `url(${arrow})`)
+            .attr('d', `M ${p0[0]} ${p0[1]} Q ${p1[0]} ${p1[1]} ${p2[0]} ${p2[1]}`);
+    }
+</script>
+
+<script type="module">
+    import * as math from './math.js';
+
+    const r = 100;
+    const start = [200, 100];
+    const end = [700, 500];
+    const points = [start, end];
+
+    const width = 1000;
+    const height = 600;
+
+    const demo = new Demo({
+        width,
+        height
+    });
+
+    const frame1 = new Frame({
+        content(selection) {
+            selection.append('defs')
+                .append('marker')
+                .attr('id', 'arrow')
+                .attr('viewbox', '0 -5 10 10')
+                .attr('refX', 10)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto-start-reverse')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5');
+
+            renderPoint(selection, ...start, 'start');
+            renderPoint(selection, ...end, 'end');
+
+            selection.append('path')
+                .attr('marker-end', `url(#arrow)`)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`);
+
+            return selection;
+        }
+    });
+
+    const frame2 = new Frame({
+        content(selection) {
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            selection.append('defs')
+                .append('marker')
+                .attr('id', 'arrow2')
+                .attr('viewbox', '0 -5 10 10')
+                .attr('refX', 10)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto-start-reverse')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5');
+
+            renderPoint(selection, ...start, 'start');
+            renderPoint(selection, ...end, 'end');
+
+            selection.append('path')
+                .attr('marker-end', `url(#arrow2)`)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`);
+        },
+        play() {
+            this.selection.selectAll('circle.circle')
+                .transition()
+                .attr('r', r);
+        }
+    });
+
+    const frame3 = new Frame({
+        content(selection) {
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .attr('r', r)
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            selection.append('defs')
+                .append('marker')
+                .attr('id', 'arrow3')
+                .attr('viewbox', '0 -5 10 10')
+                .attr('refX', 10)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto-start-reverse')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5');
+
+            renderPoint(selection, ...start, 'start');
+            renderPoint(selection, ...end, 'end');
+
+            selection.append('path')
+                .attr('marker-end', `url(#arrow3)`)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`);
+        },
+        async play() {
+            await this.selection.selectAll('marker#arrow3')
+                .transition()
+                .attr('refX', r + 10)
+                .end();
+            // this.selection.selectAll('circle.circle').raise();
+        }
+    });
+
+    const frame4 = new Frame({
+        content(selection) {
+            selection.append('defs')
+                .append('marker')
+                .attr('id', 'arrow4')
+                .attr('viewbox', '0 -5 10 10')
+                .attr('refX', 10)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto-start-reverse')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5');
+
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .attr('r', r)
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            selection.append('path')
+                .attr('marker-end', `url(#arrow4)`)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`)
+
+            const [p1] = math.getMiddlePointOfBezierCurve(...start, ...end, 300);
+
+            renderCure(selection, start, p1, end, '#arrow4');
+
+            renderPoint(selection, ...start, 'source');
+            renderPoint(selection, ...end, 'target');
+            renderPoint(selection, ...p1, 'p1');
+        },
+        async play() {
+            await this.selection.selectAll('marker#arrow4')
+                .transition()
+                .attr('refX', r + 10)
+                .end();
+            // this.selection.selectAll('circle.circle').raise();
+        }
+    });
+
+    const frame5 = new Frame({
+        content(selection) {
+            selection.append('defs')
+                .append('marker')
+                .attr('id', 'arrow5')
+                .attr('viewbox', '0 -5 10 10')
+                .attr('refX', 10)
+                .attr('refY', 0)
+                .attr('markerWidth', 6)
+                .attr('markerHeight', 6)
+                .attr('orient', 'auto-start-reverse')
+                .attr('overflow', 'visible')
+                .append('svg:path')
+                .attr('d', 'M 0,-5 L 10 ,0 L 0,5');
+
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .attr('r', r)
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            renderPoint(selection, ...start, 'source');
+            renderPoint(selection, ...end, 'target');
+
+            selection.append('path')
+                .classed('edge', true)
+                .attr('marker-end', `url(#arrow5)`)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`);
+
+        },
+        async play() {
+            const target = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...end, r);
+            const source = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...start, r);
+
+            await this.selection.selectAll('path.edge')
+                .transition()
+                .duration(1500)
+                .attr('d', `M${source[0]} ${source[1]} L ${target[0]} ${target[1]}`)
+                .end();
+
+            renderPoint(this.selection, ...source, '');
+            renderPoint(this.selection, ...target, '');
+        },
+    });
+
+    const frame6 = new Frame({
+        content(selection) {
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .attr('r', r)
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            renderPoint(selection, ...start, 'start');
+            renderPoint(selection, ...end, 'end');
+
+            selection.append('path')
+                .classed('edge', true)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`);
+
+            const source = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...start, r);
+            const target = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...end, r);
+            
+            renderPoint(selection, ...source, 'source');
+            renderPoint(selection, ...target, 'target');
+
+            for(let i = 1; i <= 3; i++) {
+                const source2 = math.rotatePoint(...source, ...start, -15 * i);
+                const target2 = math.rotatePoint(...target, ...end, 15 * i);
+                renderPoint(selection, ...source2, `source${i}`);
+                renderPoint(selection, ...target2, `target${i}`);
+
+                const [p1] = math.getMiddlePointOfBezierCurve(...source2, ...target2, 50);
+                renderPoint(selection, ...p1, `p${i}`);
+
+                const c1 = math.getControlPointOfBezierCurve(source2, p1, target2);
+                renderPoint(selection, ...c1, `c${i}`);
+
+                renderCure(selection, source2, c1, target2, '#arrow5');
+            }
+
+            // const [p1] = math.getMiddlePointOfBezierCurve(...start, ...end, 150);
+            // const c1 = math.getControlPointOfBezierCurve(start, p1, end);
+            // renderPoint(selection, ...p1, 'p1');
+            // renderPoint(selection, ...c1, 'c1');
+            // renderCure(selection, start, c1, end, '#arrow5');
+
+            // selection.append('path')
+            //     .classed('edge2', true)
+            //     .attr('d', `M${c1[0]} ${c1[1]} L ${end[0]} ${end[1]}`);
+
+            // const i1 = math.getIntersectPointBetweenCircleAndSegment(...c1, ...end, ...end, r);
+            // renderPoint(selection, ...i1, 'i1');
+
+            // const i2 = math.getIntersectPointBetweenCircleAndSegment(...c1, ...start, ...start, r);
+            // renderPoint(selection, ...i2, 'i2');
+
+            // const c2 = math.getControlPointOfBezierCurve(i2, p1, i1);
+            // renderPoint(selection, ...c2, 'c2');
+
+            // renderCure(selection, i2, c2, i1, '#arrow5');
+        },
+        async play() {
+            // const selection = this.selection;
+
+            // const source = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...start, r);
+            // const target = math.getIntersectPointBetweenCircleAndSegment(...start, ...end, ...end, r);
+
+            // await selection.select('path.edge')
+            //     .attr('opacity', 1)
+            //     .transition()
+            //     .duration(1000)
+            //     .attr('opacity', 0)
+            //     .end();
+
+            // const source2 = math.rotatePoint(...source, ...start, -30);
+            // const target2 = math.rotatePoint(...target, ...end, 30);
+            // renderPoint(selection, ...source2, `source'`);
+            // renderPoint(selection, ...target2, `target'`);
+        }
+    });
+
+    demo.addFrame(frame1);
+    demo.addFrame(frame2);
+    demo.addFrame(frame3);
+    demo.addFrame(frame4);
+    demo.addFrame(frame5);
+    demo.addFrame(frame6);
+
+    document.body.appendChild(demo.selection.node());
+
+    demo.playFrame(0);
+
+</script>
