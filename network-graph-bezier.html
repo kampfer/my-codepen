@@ -1,0 +1,303 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    svg {
+        border: 1px solid #ccc;
+    }
+
+    line {
+        stroke: black;
+    }
+
+    path {
+        stroke: black;
+        fill: none;
+    }
+
+    circle {
+        stroke: brown;
+        fill: brown;
+    }
+
+    circle.point {
+        stroke: none;
+        fill: black;
+    }
+
+    line.edge {
+        stroke: black;
+        fill: none;
+    }
+</style>
+
+<script>
+    class Demo {
+
+        constructor({
+            width,
+            height
+        }) {
+            this.selection = d3.create('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', [0, 0, width, height]);
+
+            this.selection.on('click', this.nextFrame.bind(this));
+
+            this._frames = [];
+            this._currentFrame = -1;
+        }
+
+        addFrame(frame) {
+            this._frames.push(frame);
+            this.selection.node().appendChild(frame.selection.node());
+        }
+
+        nextFrame() {
+            this.playFrame(this._currentFrame + 1);
+        }
+
+        playFrame(i) {
+            const curFrame = this._frames[this._currentFrame];
+            const nextFrame = this._frames[i];
+
+            if (nextFrame) {
+                if (curFrame) curFrame.hide();
+                nextFrame.show();
+                if (nextFrame.play) nextFrame.play();
+                this._currentFrame = i;
+            }
+        }
+
+    }
+
+    class Frame {
+
+        constructor({
+            content,
+            play
+        }) {
+            this.selection = d3.create('svg:g')
+                .style('display', 'none');
+
+            this.play = play;
+
+            if (typeof content === 'function') {
+                this.selection.call(content);
+            }
+        }
+
+        hide() {
+            this.selection.style('display', 'none');
+        }
+
+        show() {
+            this.selection.style('display', 'unset');
+        }
+
+    }
+</script>
+
+<script>
+    function renderPoint(selection, x, y, label) {
+        const g = selection.append('g');
+        g.attr('transform', `translate(${x} ${y})`);
+        g.append('circle')
+            .classed('point', true)
+            .attr('cx', 0)
+            .attr('cy', 0)
+            .attr('r', 3);
+        g.append('text')
+            .text(label)
+            .attr('x', 0 + 10)
+            .attr('y', 0 + 10);
+        return g;
+    }
+
+    function renderCure(selection, p0, p1, p2, arrow="#arrow") {
+        selection.append('path')
+            .classed('curve', true)
+            .attr('marker-end', `url(${arrow})`)
+            .attr('d', `M ${p0[0]} ${p0[1]} Q ${p1[0]} ${p1[1]} ${p2[0]} ${p2[1]}`);
+    }
+</script>
+
+<script>
+function getMiddlePointOfBezierCurve (x1, y1, x2, y2, d) {
+    if (x1 === x2) {
+        return [
+            [x1 - d, (y1 + y2) / 2],
+            [x1 + d, (y1 + y2) / 2]
+        ];
+    }
+
+    if (y1 === y2) {
+        return [
+            [(x1 + x2) / 2, y1 - d],
+            [(x1 + x2) / 2, y1 + d]
+        ];
+    }
+
+    const a = x2 - x1;
+    const b = y2 - y1;
+    const xc = (x1 + x2) / 2;
+    const yc = (y1 + y2) / 2;
+    const r = b / a;
+    const sqrtPart = d / Math.sqrt(Math.pow(r, 2) + 1);
+    return [-sqrtPart + yc, sqrtPart + yc].map(v => [xc + r * yc - r * v, v])
+}
+
+function getControlPointOfBezierCurve (p0, p1, p2) {
+    const t = 0.5;
+    const mt = (1 - t);
+    const tt = Math.pow(t, 2);
+    const mtt = Math.pow(mt, 2);
+    const d = 2 * t * mt;
+    return [
+        (p1[0] - tt * p2[0] - mtt * p0[0]) / d,
+        (p1[1] - tt * p2[1] - mtt * p0[1]) / d,
+    ];
+}
+
+function getIntersectPointBetweenCircleAndLine2(x1, y1, x2, y2, m, n, r) {
+    const alpha = (y2 - y1) / (x2 - x1);
+    const beta = (x2 * y1 - x1 * y2) / (x2 - x1);
+    const a = 1 + alpha * alpha;
+    const b = -2 * (m - alpha * beta + alpha * n);
+    const c = m * m + beta * beta - 2 * beta * n + n * n - r * r;
+    const s = b * b - 4 * a * c;
+    if (s < 0) {
+        return null;
+    } else if (s === 0) {
+        const u = -b / (2 * a);
+        return [u, alpha * u + beta];
+    } else {
+        const u1 = (-b + Math.sqrt(s)) / (2 * a);
+        const u2 = (-b - Math.sqrt(s)) / (2 * a);
+        return [
+            [u1, alpha * u1 + beta],
+            [u2, alpha * u2 + beta],
+        ];
+    }
+}
+
+function getIntersectPointBetweenCircleAndSegment(x1, y1, x2, y2, m, n, r) {
+    let points = getIntersectPointBetweenCircleAndLine2(x1, y1, x2, y2, m, n, r);
+    if (points) {
+        const max = Math.max(x1, x2);
+        const min = Math.min(x1, x2);
+        points = points.find(point => point[0] >= min && point[0] <= max);
+    }
+    return points;
+}
+
+function rotatePoint(x, y, dx, dy, angle) {
+    const rr = Math.PI / 180 * angle;
+    const xx = (x - dx) * Math.cos(rr) - (y - dy) * Math.sin(rr) + dx;
+    const yy = (y - dy) * Math.cos(rr) + (x - dx) * Math.sin(rr) + dy;
+    return [xx, yy];
+}
+</script>
+
+<body></body>
+
+<script>
+    const r = 100;
+    const start = [200, 100];
+    const end = [700, 500];
+    const points = [start, end];
+
+    const width = 1000;
+    const height = 600;
+
+    const demo = new Demo({
+        width,
+        height
+    });
+    document.body.appendChild(demo.selection.node());
+
+    const frame1 = new Frame({
+        async content(selection) {
+            selection.selectAll('circle.circle')
+                .data(points)
+                .join('circle')
+                .attr('r', r)
+                .classed('circle', true)
+                .attr('cx', d => d[0])
+                .attr('cy', d => d[1]);
+
+            renderPoint(selection, ...start, 'start');
+            renderPoint(selection, ...end, 'end');
+
+            await selection.append('path')
+                .classed('edge', true)
+                .attr('d', `M${start[0]} ${start[1]} L ${start[0]} ${start[1]}`)
+                .transition()
+                .duration(1000)
+                .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`)
+                .end();
+
+            const source = getIntersectPointBetweenCircleAndSegment(...start, ...end, ...start, r);
+            const target = getIntersectPointBetweenCircleAndSegment(...start, ...end, ...end, r);
+
+            renderPoint(selection, ...source, 'source');
+            renderPoint(selection, ...target, 'target');
+
+            const source2 = Array.from(source);
+            const target2 = Array.from(target);
+            const source2g = renderPoint(selection, ...source2, 'source2');
+            const target2g = renderPoint(selection, ...target2, 'target2');
+
+            await Promise.all([
+                source2g.transition()
+                    .duration(1000)
+                    .attrTween('transform', () => 
+                        (t) => {
+                            const position = rotatePoint(...source, ...start, t * -30)
+                            return `translate(${position[0]} ${position[1]})`;
+                        }
+                        
+                    )
+                    .end(),
+                target2g.transition()
+                    .duration(1000)
+                    .attrTween('transform', () => 
+                        (t) => {
+                            const position = rotatePoint(...target, ...end, t * 30)
+                            return `translate(${position[0]} ${position[1]})`;
+                        }
+                        
+                    )
+                    .end(),
+            ]);
+
+            const source3 = rotatePoint(...source, ...start, -30);
+            const target3 = rotatePoint(...target, ...end, 30);
+
+            const m1 = getMiddlePointOfBezierCurve(...source3, ...target3, 50)[0];
+            renderPoint(selection, ...m1, 'm1');
+
+            const c1 = getControlPointOfBezierCurve(source3, m1, target3);
+            renderPoint(selection, ...c1, 'c1');
+
+            const curve = selection.append('path')
+                .classed('curve', true)
+                .attr('d', `M ${source3[0]} ${source3[1]} Q ${c1[0]} ${c1[1]} ${target3[0]} ${target3[1]}`);
+
+            const len = curve.node().getTotalLength();
+
+            curve.attr('stroke-dasharray', len);
+            curve.attr('stroke-dashoffset', len);
+
+            curve.transition()
+                .duration(1000)
+                .attr('stroke-dashoffset', 0)
+                .end();
+        }
+    });
+
+    demo.addFrame(frame1);
+
+    demo.playFrame(0);
+
+</script>
