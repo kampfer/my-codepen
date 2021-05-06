@@ -1,0 +1,123 @@
+<svg id="demo" xmlns="http://www.w3.org/2000/svg">
+    <defs></defs>
+    <g>
+        <g v-for="node in data.nodes" :id="node.id" class="node-group" :transform="`translate(${node.x}, ${node.y})`">
+            <circle class="node" r="15"></circle>
+            <text x="0" y="29" text-anchor="middle" class="node-label" style="font-size: 14px;">{{ node.label }}</text>
+        </g>
+        <g v-for="edge in data.edges" class="edge-group">
+            <path stroke="#000" class="edge" :id="`edge-${edge.id}`" fill="none" marker-start="none"
+                marker-end="url(#arrow-default)"
+                :d="`M ${edge.source.x || 0} ${edge.source.y || 0} L ${edge.target.x || 0} ${edge.target.y || 0}`"></path>
+            <text class="edge-label">
+                <textPath xlink:href="#edge-xz7bd0hekx" text-anchor="middle" startOffset="50%">关系：xz7bd0hekx</textPath>
+            </text>
+        </g>
+    </g>
+</svg>
+
+<style>
+    body { padding: 0; margin: 0; }
+    svg { display: block; }
+</style>
+
+<script src="./assets/d3.v6.js"></script>
+<script src="./assets/vue.min.js"></script>
+
+<script>
+    function getRandomColor() {
+        const rgb = [];
+        for (let i = 0; i < 3; ++i) {
+            let color = Math.floor(Math.random() * 256).toString(16);
+            color = color.length == 1 ? "0" + color : color;
+            rgb.push(color);
+        }
+        return "#" + rgb.join("");
+    }
+
+    const random = function (n) {
+        // 生成n位长度的字符串
+        var str = "abcdefghijklmnopqrstuvwxyz0123456789"; // 可以作为常量放到random外面
+        var result = "";
+        for (var i = 0; i < n; i++) {
+            result += str[parseInt(Math.random() * str.length)];
+        }
+        return result;
+    };
+
+    function randomNode(data) {
+        return data.nodes[Math.floor(Math.random() * data.nodes.length)];
+    }
+
+    function makeData(nodeCount, edgeCount) {
+        const data = { nodes: [], edges: [] };
+        for (let i = 0; i < nodeCount; i++) {
+            let id = random(10);
+            data.nodes.push({
+                id,
+                label: id,
+                x: 0,
+                y: 0
+            });
+        }
+        for (let i = 0; i < edgeCount; i++) {
+            let id = random(10);
+            let target = randomNode(data);
+            let source = randomNode(data);
+            while (source === target) {
+                target = randomNode(data);
+            }
+            data.edges.push({
+                id,
+                label: id,
+                source: source.id,
+                target: target.id
+            });
+        }
+        return data;
+    }
+
+    var vm = new Vue({
+        el: "#demo",
+        data: {
+            data: {}
+        },
+        mounted() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            this.$el.setAttribute('viewBox', `${-width / 2} ${-height / 2} ${width} ${height}`);
+            this.$el.setAttribute('width', width);
+            this.$el.setAttribute('height', height);
+
+            this._d3Zoom = d3.zoom()
+                // .filter(event => !event.ctrlKey)
+                .extent([[-width / 2, -height / 2], [width / 2, height / 2]])
+                .scaleExtent([1, 8]);
+                // .on('zoom', this._transportEvent('zoom'));
+
+            const svgSelection = d3.select('#demo > g');
+            svgSelection.call(this._d3Zoom);
+
+            this.data = makeData(10, 30);
+
+            const simulation = d3.forceSimulation();
+            const linkForce = d3
+                .forceLink()
+                .id((d) => d.id)
+                .distance(100);
+
+            simulation
+                .force("edge", linkForce)
+                .force("change", d3.forceManyBody().strength(-500))
+                .force("x", d3.forceX().strength(0.05))
+                .force("y", d3.forceY().strength(0.05));
+
+            // simulation.alphaTarget(0.3);
+
+            simulation.nodes(this.data.nodes);
+            linkForce.links(this.data.edges);
+        }
+    });
+
+</script>

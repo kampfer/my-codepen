@@ -8,23 +8,26 @@
     import QuadraticBezierCurve from './QuadraticBezierCurve.js';
 
     const r = 80;
-    const start = [200, 200];
-    const end = [700, 500];
+    // const start = [200, 200];
+    // const end = [700, 500];
+    // const points = [start, end];
+    const start = new Vector2(200, 200);
+    const end = new Vector2(700, 500);
     const points = [start, end];
 
     const width = 1000;
     const height = 600;
 
-    function renderPoint(selection, x, y, label) {
+    function renderPoint(selection, p, label) {
         selection.append('circle')
             .classed('point', true)
-            .attr('cx', x)
-            .attr('cy', y)
+            .attr('cx', p.x)
+            .attr('cy', p.y)
             .attr('r', 3);
         selection.append('text')
             .text(label)
-            .attr('x', x + 10)
-            .attr('y', y + 10)
+            .attr('x', p.x + 10)
+            .attr('y', p.y + 10)
     }
 
     function renderCure(selection, p0, p1, p2, arrow="#arrow") {
@@ -33,7 +36,7 @@
             .attr('fill', 'none')
             .attr('stroke', '#000')
             .attr('marker-end', `url(${arrow})`)
-            .attr('d', `M ${p0[0]} ${p0[1]} Q ${p1[0]} ${p1[1]} ${p2[0]} ${p2[1]}`);
+            .attr('d', `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`);
     }
 
     // https://blog.csdn.net/gfuugff/article/details/84020509
@@ -43,6 +46,39 @@
         const k = v1.dot(v2) / v2.lengthSq();
         return new Vector2().add(p1).add(v2.multiplyScalar(k));
     }
+
+    function getMiddlePointOfBezierCurve(start, end, d) {
+        if (start.x === end.x) {
+            return new Vector2(start.x + d, (start.y + end.y) / 2);
+        }
+
+        if (start.y === end.y) {
+            return new Vector2((start.x + end.x) / 2, start.y + d);
+        }
+
+        const a = end.x - start.x;
+        const b = end.y - start.y;
+        const xc = (start.x + end.x) / 2;
+        const yc = (start.y + end.y) / 2;
+        const r = b / a;
+        const sqrtPart = d / Math.sqrt(Math.pow(r, 2) + 1);
+        const y = yc - sqrtPart;
+        return new Vector2(xc + r * yc - r * y, y);
+    }
+
+    function getControlPointOfBezierCurve(p0, p1, p2) {
+        const t = 0.5;
+        const mt = (1 - t);
+        const tt = Math.pow(t, 2);
+        const mtt = Math.pow(mt, 2);
+        const d = 2 * t * mt;
+        return new Vector2(
+            (p1.x - tt * p2.x - mtt * p0.x) / d,
+            (p1.y - tt * p2.y - mtt * p0.y) / d,
+        );
+    }
+
+    function getIntersectPointBetweenCircleAndSegment() {}
 
     const svg = d3.create('svg')
         .attr('width', width)
@@ -57,50 +93,52 @@
         .attr('fill', 'none')
         .attr('stroke', '#000')
         .classed('circle', true)
-        .attr('cx', d => d[0])
-        .attr('cy', d => d[1]);
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y);
 
-    renderPoint(svg, ...start, 'start');
-    renderPoint(svg, ...end, 'end');
+    renderPoint(svg, start, 'start');
+    renderPoint(svg, end, 'end');
 
-    const [p1] = math.getMiddlePointOfBezierCurve(...start, ...end, 100);
-    renderPoint(svg, ...p1, 'p1');
+    const p1 = getMiddlePointOfBezierCurve(start, end, 100);
+    renderPoint(svg, p1, 'p1');
 
-    const c1 = math.getControlPointOfBezierCurve(start, p1, end);
-    renderPoint(svg, ...c1, 'c1');
+    const c1 = getControlPointOfBezierCurve(start, p1, end);
+    renderPoint(svg, c1, 'c1');
 
     renderCure(svg, start, c1, end);
 
-    svg.append('path')
-        .attr('stroke', '#000')
-        .attr('d', `M${p1[0]} ${p1[1]} L ${end[0]} ${end[1]}`)
+    // svg.append('path')
+    //     .attr('stroke', '#000')
+    //     .attr('d', `M${p1[0]} ${p1[1]} L ${end[0]} ${end[1]}`)
 
     svg.append('path')
         .attr('stroke', '#000')
-        .attr('d', `M${c1[0]} ${c1[1]} L ${end[0]} ${end[1]}`)
+        .attr('d', `M${c1.x} ${c1.y} L ${end.x} ${end.y}`)
 
-    svg.append('path')
-        .attr('stroke', '#000')
-        .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`)
+    // svg.append('path')
+    //     .attr('stroke', '#000')
+    //     .attr('d', `M${start[0]} ${start[1]} L ${end[0]} ${end[1]}`)
 
-    const j1 = math.getIntersectPointBetweenCircleAndSegment(...p1, ...end, ...end, r);
-    renderPoint(svg, ...j1, 'j1');
+    // const j1 = math.getIntersectPointBetweenCircleAndSegment(...p1, ...end, ...end, r);
+    // renderPoint(svg, ...j1, 'j1');
 
-    const j1p = project(Vector2.fromArray(j1), Vector2.fromArray(start), Vector2.fromArray(end));
-    renderPoint(svg, j1p.x, j1p.y, `j1'`);
+    // const j1p = project(Vector2.fromArray(j1), Vector2.fromArray(start), Vector2.fromArray(end));
+    // renderPoint(svg, j1p.x, j1p.y, `j1'`);
 
-    const startv = Vector2.fromArray(start);
-    const endv = Vector2.fromArray(end);
-    const k = j1p.clone().sub(startv).length() / endv.clone().sub(startv).length();
+    // const startv = Vector2.fromArray(start);
+    // const endv = Vector2.fromArray(end);
+    // const k = j1p.clone().sub(startv).length() / endv.clone().sub(startv).length();
+    // const k1 = Vector2.fromArray(j1).sub(endv).length() / endv.clone().sub(Vector2.fromArray(p1)).length();
+    // console.log(k, 1 - k1 / 2);
 
-    const curve = new QuadraticBezierCurve(startv, Vector2.fromArray(c1), endv);
-    const p2 = curve.getPoint(k);
-    renderPoint(svg, p2.x, p2.y, `p2`);
+    // const curve = new QuadraticBezierCurve(startv, Vector2.fromArray(c1), endv);
+    // const p2 = curve.getPoint(k);
+    // renderPoint(svg, p2.x, p2.y, `p2`);
 
-    const alpha = curve.getDerivative(k);
-    const beta = p2.y - alpha * p2.x;
-    const j2 = math.getIntersectPointBetweenCircleAndLine3(alpha, beta, ...end, r)[1];
-    renderPoint(svg, ...j2, `j2`);
+    // const alpha = curve.getDerivative(k);
+    // const beta = p2.y - alpha * p2.x;
+    // const j2 = math.getIntersectPointBetweenCircleAndLine3(alpha, beta, ...end, r)[1];
+    // renderPoint(svg, ...j2, `j2`);
 
 
 </script>
