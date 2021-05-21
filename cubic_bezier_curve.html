@@ -109,6 +109,18 @@ function renderGrid(selection, gridGap, width, height) {
 <script type="module">
     import Vector2 from './Vector2.js';
 
+    function caculateCenterOfCircle(p1, p2, p3) {
+        const mid1 = p1.clone().add(p3).divideScalar(2);
+        const mid2 = p2.clone().add(p3).divideScalar(2);
+        const k1 = -(p3.x - p1.x) / (p3.y - p1.y);
+        const k2 = -(p3.x - p2.x) / (p3.y - p2.y);
+        const center = new Vector2(
+            (mid2.y - mid1.y - k2 * mid2.x + k1 * mid1.x) / (k1 - k2),
+            mid1.y + k1 * (mid2.y - mid1.y - k2 * mid2.x + k2 * mid1.x) / (k1 - k2),
+        );
+        return center;
+    }
+
     const width = 275;
     const height = 275;
     const gridGap = 20;
@@ -130,18 +142,7 @@ function renderGrid(selection, gridGap, width, height) {
     renderPoint(svg, end, 'end');
     renderPoint(svg, b, 'b');
 
-    const mid1 = Vector2.fromAddVectors(start, b).divideScalar(2);
-    const mid2 = Vector2.fromAddVectors(end, b).divideScalar(2);
-
-    // renderPoint(svg, mid1, 'mid1');
-    // renderPoint(svg, mid2, 'mid2');
-
-    const k1 = -(b.x - start.x) / (b.y - start.y);
-    const k2 = -(b.x - end.x) / (b.y - end.y);
-
-    const center = new Vector2();
-    center.x = (mid2.y - mid1.y - k2 * mid2.x + k1 * mid1.x) / (k1 - k2);
-    center.y = mid1.y + k1 * (mid2.y - mid1.y - k2 * mid2.x + k2 * mid1.x) / (k1 - k2);
+    const center = caculateCenterOfCircle(start, end, b);
 
     renderPoint(svg, center, 'center');
 
