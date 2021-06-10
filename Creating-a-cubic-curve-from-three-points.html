@@ -1,0 +1,200 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    svg {
+        border: 1px solid lightgrey;
+        margin: 20px;
+    }
+    .grid path {
+        shape-rendering: crispEdges
+    }
+</style>
+
+<body></body>
+
+<script>
+function random(start, end) {
+    return Math.floor((end - start + 1) * Math.random()) + start;
+}
+
+// https://pomax.github.io/bezierinfo/#abc
+function u(t) {
+    return (1 - t) * (1 - t) / (t * t + (1 - t) * (1 - t));
+}
+
+function u3(t) {
+    return Math.pow(1-t, 3) / (t * t * t + Math.pow(1 - t, 3));
+}
+
+function ratio(t) {
+    return Math.abs((t * t + (1 - t) * (1 - t) - 1) / (t * t + (1 - t) * (1 - t)));
+}
+
+function ratio3(t) {
+    return Math.abs((Math.pow(t, 3) + Math.pow(1- t, 3) - 1) / (Math.pow(t, 3) + Math.pow(1 - t, 3)));
+}
+
+function renderPoint(selection, p, label) {
+    selection.append('circle')
+        .classed('point', true)
+        .attr('cx', p.x)
+        .attr('cy', p.y)
+        .attr('r', 3);
+    selection.append('text')
+        .text(label)
+        .attr('x', p.x + 10)
+        .attr('y', p.y + 10);
+}
+
+function renderCure(selection, p0, p1, p2, arrow="#arrow") {
+    selection.append('path')
+        .classed('curve', true)
+        .attr('fill', 'none')
+        .attr('stroke', '#000')
+        .attr('marker-end', `url(${arrow})`)
+        .attr('d', `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`);
+}
+
+function renderGrid(selection, gridGap, width, height) {
+    const grids = [[], []];
+    for(let i = 0, l = Math.ceil(width / gridGap); i < l; i++) {
+        grids[0].push([0, i * gridGap, width, i * gridGap]);
+        grids[1].push([i * gridGap, 0, i * gridGap, height]);
+    }
+
+    selection.append('g')
+        .classed('grid', true)
+        .selectAll('g')
+        .data(grids)
+        .join('g')
+        .classed('x-graids', (d, i) => i === 0)
+        .classed('y-graids', (d, i) => i === 1)
+        .selectAll('path')
+        .data(d => d)
+        .join('path')
+        .attr('stroke', '#f0f0f0')
+        .attr('fill', 'none')
+        .attr('d', d => `M${d[0]} ${d[1]} L${d[2]} ${d[3]}`);
+}
+</script>
+
+<script type="module">
+    import Vector2 from './Vector2.js';
+
+    function caculateCenterOfCircle(p1, p2, p3) {
+        // const mid1 = p1.clone().add(p3).divideScalar(2);
+        // const mid2 = p2.clone().add(p3).divideScalar(2);
+        // const k1 = -(p3.x - p1.x) / (p3.y - p1.y);
+        // const k2 = -(p3.x - p2.x) / (p3.y - p2.y);
+        // const center = new Vector2(
+        //     (mid2.y - mid1.y - k2 * mid2.x + k1 * mid1.x) / (k1 - k2),
+        //     mid1.y + k1 * (mid2.y - mid1.y - k2 * mid2.x + k2 * mid1.x) / (k1 - k2),
+        // );
+        // return center;
+        const x1 = p1.x;
+        const y1 = p1.y;
+        const x2 = p2.x;
+        const y2 = p2.y;
+        const x3 = p3.x;
+        const y3 = p3.y;
+
+        const a = x1 * (y2 - y3) - y1 * (x2 - x3) + x2 * y3 - x3 * y2;
+
+        // 三点共线
+        if (a === 0) return null;
+
+        const b = (x1 * x1 + y1 * y1) * (y3 - y2) 
+                + (x2 * x2 + y2 * y2) * (y1 - y3)
+                + (x3 * x3 + y3 * y3) * (y2 - y1);
+        
+        const c = (x1 * x1 + y1 * y1) * (x2 - x3) 
+                + (x2 * x2 + y2 * y2) * (x3 - x1) 
+                + (x3 * x3 + y3 * y3) * (x1 - x2);
+        
+        const x = -b / (2 * a);
+        const y = -c / (2 * a);
+
+        return new Vector2(x, y);
+    }
+
+    const width = 275 * 2;
+    const height = 275 * 2;
+    const gridGap = 20;
+    
+    const svg = d3.create('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', [0, 0, width, height]);
+    document.body.appendChild(svg.node());
+
+    renderGrid(svg, gridGap, width, height);
+
+    const t = 0.5;
+    const ut = u3(t);
+    const rt = ratio3(t);
+    const start = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
+    const end = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
+    const b = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
+    // const start = new Vector2(300, 400);
+    // const end = new Vector2(300, 400);
+    // const b = new Vector2(300, 300);
+    const c = Vector2.fromAddVectors(start.clone().multiplyScalar(ut), end.clone().multiplyScalar(1 - ut));
+    const a = Vector2.fromAddVectors(b, Vector2.fromSubVectors(b, c).divideScalar(rt));
+
+    renderPoint(svg, start, 'start');
+    renderPoint(svg, end, 'end');
+    renderPoint(svg, b, 'b');
+    // renderPoint(svg, c, 'c');
+    // renderPoint(svg, a, 'a');
+
+    let center = caculateCenterOfCircle(start, end, b);
+
+    let r;
+    if (!center) {
+        center = start.clone().add(b).divideScalar(2);
+        r = start.clone().sub(b).length() / 2
+    } else {
+        r = Math.sqrt(Math.pow(center.x - start.x, 2) + Math.pow(center.y - start.y, 2));
+    }
+
+    // renderPoint(svg, center, 'center');
+
+    svg.append('circle')
+        .attr('fill', 'none')
+        .attr('stroke', '#000')
+        .attr('cx', center.x)
+        .attr('cy', center.y)
+        .attr('r', r);
+
+    let l = start.clone().sub(end).length();
+    if (l < 100) l = 100;
+    const line1 = center.clone().sub(b);
+    // const tline = line1.y / line1.x;
+    const k = - line1.x / line1.y;
+    // console.log(l);
+    const e2 = b.clone();
+    e2.x += t * l / 3;
+    e2.y += k * t * l / 3;
+    const e1 = b.clone();
+    e1.x -= (1 - t) * l / 3;
+    e1.y -= k * (1 - t) * l / 3;
+    renderPoint(svg, e1, 'e1');
+    renderPoint(svg, e2, 'e2');
+    console.log(e2.clone().sub(e1).length(), l);
+
+    const v1 = a.clone().sub(a.clone().sub(e1).divideScalar(1-t));
+    const v2 = a.clone().sub(a.clone().sub(e2).divideScalar(t));
+    // renderPoint(svg, v1, 'v1');
+    // renderPoint(svg, v2, 'v2');
+
+    const c1 = start.clone().add(v1.clone().sub(start).divideScalar(t));
+    const c2 = end.clone().add(v2.clone().sub(end).divideScalar(1-t));
+    // renderPoint(svg, c1, 'c1');
+    // renderPoint(svg, c2, 'c2');
+
+    svg.append('path')
+        .classed('curve', true)
+        .attr('fill', 'none')
+        .attr('stroke', '#000')
+        .attr('d', `M ${start.x} ${start.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${end.x} ${end.y}`);
+</script>

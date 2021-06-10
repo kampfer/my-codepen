@@ -41,9 +41,17 @@ export default class Vector2 {
 
     divide() {}
 
-    addScalar() {}
+    addScalar(v) {
+        this.x += v;
+        this.y += v;
+        return this;
+    }
 
-    subScalar() {}
+    subScalar(v) {
+        this.x -= v;
+        this.y -= v;
+        return this;
+    }
 
     multiplyScalar(scalar) {
         this.x *= scalar;
