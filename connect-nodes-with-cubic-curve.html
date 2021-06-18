@@ -43,8 +43,12 @@ const theta = -Math.PI / 2;
 const j = new Vector2(Math.cos(theta) * r, Math.sin(theta) * r).add(center);
 // utils.renderPoint(svg, j, 'j');
 
-const count = 5;
+const count = 18;
 const delta = Math.PI / 2 / count;
+const deltaD = 30;
+// a到start-end的距离
+const d = 80;
+// const l = end.clone().sub(start).length();
 // const delta = Math.PI / 24;
 for(let i = 1; i < count; i++) {
     const angle = delta * i;
@@ -54,10 +58,7 @@ for(let i = 1; i < count; i++) {
     // utils.renderPoint(svg, start, 'start');
     // utils.renderPoint(svg, end, 'end');
 
-    // a到start-end的距离
-    const d = 80;
-    const l = end.clone().sub(start).length();
-    const ratio = Math.cos(angle) * r / (Math.cos(angle) * r + l * 3 * i)
+    const ratio = Math.cos(angle) * r / (Math.cos(angle) * r + d + i * deltaD)
     const c1 = new Vector2(
         (start.x - center.x) / ratio + center.x,
         (start.y - center.y) / ratio + center.y,

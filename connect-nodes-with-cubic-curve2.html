@@ -20,7 +20,7 @@ const width = 275 * 2;
 const height = 275 * 2;
 const gridGap = 20;
 const r = 50;
-const center = new Vector2(200, 275);
+const center = new Vector2(100, 275);
 const center2 = new Vector2(400, 350);
 const svg = d3.create('svg')
     .attr('width', width)
@@ -50,11 +50,11 @@ utils.renderPoint(svg, center2, 'cente2');
 
 const j1 = utils.getIntersectPointBetweenCircleAndSegment(center, center2, center, r);
 const j2 = utils.getIntersectPointBetweenCircleAndSegment(center, center2, center2, r);
-const delta = Math.PI / 32;
+const delta = Math.PI / 24;
 const deltaD = 20;
 
 for(let i = 4; i < 10; i++) {
-    if (i !== 4) continue;
+    // if (i !== 4) continue;
     const angle = delta * i;
     const start = j1.clone().rotateAround(center, -angle);
     const end = j2.clone().rotateAround(center2, angle);
@@ -64,6 +64,9 @@ for(let i = 4; i < 10; i++) {
 
     const ratio = Math.abs(Math.cos(angle) * r) / (center2.clone().sub(center).length() / 3);
     // const ratio = Math.sin(angle) * r / (Math.sin(angle) * r + deltaD * i);
+    // const c = utils.intersectLine(center, start, center2, end);
+    // const c1 = c.clone();
+    // const c2 = c.clone();
     const c1 = new Vector2(
         (start.x - center.x) / ratio + center.x,
         (start.y - center.y) / ratio + center.y,

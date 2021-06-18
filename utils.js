@@ -99,3 +99,11 @@ export function getIntersectPointBetweenCircleAndSegment(p0, p1, c, r) {
     }
     return points;
 }
+
+export function intersectLine(p1, p2, p3, p4) {
+    const nx = (p1.x * p2.y - p1.y * p2.x) * (p3.x - p4.x) - (p1.x - p2.x) * (p3.x * p4.y - p3.y * p4.x),
+          ny = (p1.x * p2.y - p1.y * p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x * p4.y - p3.y * p4.x),
+          d = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+    if (d == 0) return false;
+    return new Vector2(nx / d, ny / d);
+}
