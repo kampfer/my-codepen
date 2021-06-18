@@ -1,0 +1,79 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    svg {
+        border: 1px solid lightgrey;
+        margin: 20px;
+    }
+    .grid path {
+        shape-rendering: crispEdges
+    }
+</style>
+
+<body></body>
+
+<script type="module">
+import Vector2 from './Vector2.js';
+import * as utils from './utils.js';
+
+const width = 275 * 2;
+const height = 275 * 2;
+const gridGap = 20;
+const r = 40;
+const center = new Vector2(275, 275);
+const center2 = center.clone();
+const svg = d3.create('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox', [0, 0, width, height]);
+
+document.body.appendChild(svg.node());
+
+utils.renderGrid(svg, gridGap, width, height);
+utils.renderPoint(svg, center, 'center');
+
+svg.append('circle')
+    .attr('fill', 'none')
+    .attr('stroke', '#000')
+    .attr('cx', center.x)
+    .attr('cy', center.y)
+    .attr('r', r);
+
+const theta = -Math.PI / 2;
+const j = new Vector2(Math.cos(theta) * r, Math.sin(theta) * r).add(center);
+// utils.renderPoint(svg, j, 'j');
+
+const count = 5;
+const delta = Math.PI / 2 / count;
+// const delta = Math.PI / 24;
+for(let i = 1; i < count; i++) {
+    const angle = delta * i;
+    const start = j.clone().rotateAround(center, -angle);
+    const end = j.clone().rotateAround(center, angle);
+
+    // utils.renderPoint(svg, start, 'start');
+    // utils.renderPoint(svg, end, 'end');
+
+    // a到start-end的距离
+    const d = 80;
+    const l = end.clone().sub(start).length();
+    const ratio = Math.cos(angle) * r / (Math.cos(angle) * r + l * 3 * i)
+    const c1 = new Vector2(
+        (start.x - center.x) / ratio + center.x,
+        (start.y - center.y) / ratio + center.y,
+    );
+    const c2 = new Vector2(
+        (end.x - center.x) / ratio + center.x,
+        (end.y - center.y) / ratio + center.y,
+    );
+    utils.renderPoint(svg, c1, 'c1');
+    utils.renderPoint(svg, c2, 'c2');
+
+    svg.append('path')
+        .classed('curve', true)
+        .attr('fill', 'none')
+        .attr('stroke', '#000')
+        .attr('d', `M ${start.x} ${start.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${end.x} ${end.y}`);
+}
+
+</script>

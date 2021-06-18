@@ -134,6 +134,7 @@ function renderGrid(selection, gridGap, width, height) {
     const rt = ratio3(t);
     const start = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
     const end = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
+    // const end = start.clone();
     const b = new Vector2(random( width / 2 - 100, width / 2 + 100), random(height / 2 - 100, height / 2 + 100));
     // const start = new Vector2(300, 400);
     // const end = new Vector2(300, 400);
@@ -166,21 +167,27 @@ function renderGrid(selection, gridGap, width, height) {
         .attr('cy', center.y)
         .attr('r', r);
 
-    let l = start.clone().sub(end).length();
-    if (l < 100) l = 100;
-    const line1 = center.clone().sub(b);
-    // const tline = line1.y / line1.x;
-    const k = - line1.x / line1.y;
-    // console.log(l);
-    const e2 = b.clone();
-    e2.x += t * l / 3;
-    e2.y += k * t * l / 3;
-    const e1 = b.clone();
-    e1.x -= (1 - t) * l / 3;
-    e1.y -= k * (1 - t) * l / 3;
+    const TAU = Math.PI * 2;
+    const angle = (Math.atan2(end.y-start.y, end.x-start.x) - Math.atan2(b.y-start.y, b.x-start.x) + TAU) % TAU,
+          bc = (angle < 0 || angle > Math.PI ? -1 : 1) * end.clone().sub(start).length() / 3,
+          de1 = t * bc,
+          de2 = (1-t) * bc;
+    
+    const tangent = [
+            new Vector2(b.x - 10 * (b.y-center.y), b.y + 10 * (b.x-center.x)),
+            new Vector2(b.x + 10 * (b.y-center.y), b.y - 10 * (b.x-center.x)),
+          ],
+          tlength = tangent[1].clone().sub(tangent[0]).length(),
+          dx = (tangent[1].x - tangent[0].x)/tlength,
+          dy = (tangent[1].y - tangent[0].y)/tlength;
+
+    renderPoint(svg, tangent[0], 't0');
+    renderPoint(svg, tangent[1], 't1');
+
+    const e1 = new Vector2(b.x + de1 * dx, b.y + de1 * dy);
+    const e2 = new Vector2(b.x - de2 * dx, b.y - de2 * dy);
     renderPoint(svg, e1, 'e1');
     renderPoint(svg, e2, 'e2');
-    console.log(e2.clone().sub(e1).length(), l);
 
     const v1 = a.clone().sub(a.clone().sub(e1).divideScalar(1-t));
     const v2 = a.clone().sub(a.clone().sub(e2).divideScalar(t));

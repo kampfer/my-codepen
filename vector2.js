@@ -83,4 +83,16 @@ export default class Vector2 {
         return new this.constructor(this.x, this.y);
     }
 
+    // angle > 0 顺时针
+    // angle < 0 逆时针
+    rotateAround(center, angle) {
+        const s = Math.sin(angle),
+              c = Math.cos(angle),
+              x = this.x - center.x,
+              y = this.y - center.y;
+        this.x = c * x - s * y + center.x;
+        this.y = s * x + c * y + center.y;
+        return this;
+    }
+
 }
