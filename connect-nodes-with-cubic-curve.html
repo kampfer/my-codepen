@@ -39,26 +39,39 @@ svg.append('circle')
     .attr('cy', center.y)
     .attr('r', r);
 
-const theta = -Math.PI / 2;
-const j = new Vector2(Math.cos(theta) * r, Math.sin(theta) * r).add(center);
-// utils.renderPoint(svg, j, 'j');
-
-const count = 18;
+// x轴正方向，逆时针为负，顺时针为正
+const theta = -Math.PI / 3;
+const count = 10;
 const delta = Math.PI / 2 / count;
 const deltaD = 30;
+const t = 0.5;
 // a到start-end的距离
-const d = 80;
-// const l = end.clone().sub(start).length();
-// const delta = Math.PI / 24;
+const d = 2 * r;
+const j = new Vector2(Math.cos(theta) * r, Math.sin(theta) * r).add(center);
+// const b = new Vector2(Math.cos(theta) * (r + d), Math.sin(theta) * (r + d)).add(center);
+
+// utils.renderPoint(svg, b, 'b');
+// utils.renderPoint(svg, j, 'j');
+
 for(let i = 1; i < count; i++) {
+    if (i !== 3) continue;
     const angle = delta * i;
     const start = j.clone().rotateAround(center, -angle);
     const end = j.clone().rotateAround(center, angle);
 
+    // const c = start.clone().multiplyScalar(utils.u3(t)).add(end.clone().multiplyScalar(1- utils.u3(t)));
+    // const a = b.clone().sub(c.clone().sub(b).divideScalar(utils.ratio3(t)));
+    // utils.renderPoint(svg, c, 'c');
+    // utils.renderPoint(svg, a, 'a');
+
+    // const ratio = center.clone().sub(c).length() / center.clone().sub(a).length();
+
+    // alert(Math.abs(a.clone().sub(b).cross(c.clone().sub(b))) < Number.EPSILON);
+
     // utils.renderPoint(svg, start, 'start');
     // utils.renderPoint(svg, end, 'end');
 
-    const ratio = Math.cos(angle) * r / (Math.cos(angle) * r + d + i * deltaD)
+    const ratio = Math.cos(angle) * r / (Math.cos(angle) * r + d + i * deltaD);
     const c1 = new Vector2(
         (start.x - center.x) / ratio + center.x,
         (start.y - center.y) / ratio + center.y,
