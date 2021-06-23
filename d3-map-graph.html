@@ -1,0 +1,51 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+    }
+</style>
+
+<script>
+Promise.all([
+    d3.json('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json'),
+    d3.json('https://geo.datav.aliyun.com/areas_v3/bound/all.json'),
+]).then(([chinaMap, areas]) => {
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.create('svg')
+        .attr('viewBox', [0, 0, width, height])
+        .attr('width', width)
+        .attr('height', height);
+
+    document.body.appendChild(svg.node());
+
+     // https://www.imooc.com/wenda/detail/605184
+     const projection = d3.geoIdentity()
+        .reflectY(true)
+        .fitExtent([[0, 0], [width, height]], chinaMap)
+
+    const geoPath = d3.geoPath(projection);
+
+    svg.append('g')
+        .selectAll('path')
+        .data(chinaMap.features)
+        .join('path')
+            .attr('d', geoPath);
+
+    areas.forEach(d => {
+        if (d.name === '武汉市' || d.name === '北京市') {
+            console.log(d);
+            const coord = projection([d.lng, d.lat])
+            svg.append('circle')
+                .attr('r', 2)
+                .attr('cx', coord[0])
+                .attr('cy', coord[1])
+                .attr('fill', 'red');
+        }
+    });
+});
+</script>
