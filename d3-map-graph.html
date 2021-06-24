@@ -5,9 +5,46 @@
         padding: 0;
         margin: 0;
     }
+    path.line {
+        transition: stroke 2s;
+        stroke: url(#end);
+    }
 </style>
 
-<script>
+<script type="module">
+import Vector2 from './vector2.js';
+import * as utils from './utils.js';
+
+function makeBPoint2(start, end, d) {
+    if (start.x === end.x) {
+        return new Vector2(start.x + d, (start.y + end.y) / 2);
+    }
+
+    if (start.y === end.y) {
+        return new Vector2((start.x + end.x) / 2, start.y + d);
+    }
+
+    const a = end.x - start.x;
+    const b = end.y - start.y;
+    const xc = (start.x + end.x) / 2;
+    const yc = (start.y + end.y) / 2;
+    const r = b / a;
+    const sqrtPart = d / Math.sqrt(Math.pow(r, 2) + 1);
+    const y = yc - sqrtPart;
+    return new Vector2(xc + r * yc - r * y, y);
+}
+
+function makeBPoint(start, end, d) {
+    const distance = end.clone().sub(start).length();
+    const l = Math.sqrt(Math.pow(distance / 2, 2) + d * d);
+    const t = l / distance;
+    const b = start.clone().multiplyScalar(1 - t).add(end.clone().multiplyScalar(t));
+    // -PI ~ PI
+    const theta = Math.atan2(d, distance / 2);
+    b.rotateAround(start, -theta);
+    return b;
+}
+
 Promise.all([
     d3.json('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json'),
     d3.json('https://geo.datav.aliyun.com/areas_v3/bound/all.json'),
@@ -20,6 +57,75 @@ Promise.all([
         .attr('viewBox', [0, 0, width, height])
         .attr('width', width)
         .attr('height', height);
+
+    const linearGradients = [
+        {
+            name: 'start',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '25%',
+                    stopColor: '#0079c6'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#fff'
+                }
+            ]
+        },
+        {
+            name: 'mid',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#fff'
+                },
+                {
+                    offset: '25%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '50%',
+                    stopColor: '#0079c6'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#fff'
+                }
+            ]
+        },
+        {
+            name: 'end',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#fff'
+                },
+                {
+                    offset: '75%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#0079c6'
+                }
+            ]
+        }
+    ];
+
+    svg.append('defs')
+        .selectAll('linearGradient')
+        .data(linearGradients)
+        .join('linearGradient')
+            .attr('id', d => d.name)
+            .selectAll('stop')
+            .data(d => d.stops)
+            .join('stop')
+            .attr('offset', d => d.offset)
+            .attr('stop-color', d => d.stopColor);
 
     document.body.appendChild(svg.node());
 
@@ -36,16 +142,49 @@ Promise.all([
         .join('path')
             .attr('d', geoPath);
 
-    areas.forEach(d => {
-        if (d.name === '武汉市' || d.name === '北京市') {
-            console.log(d);
-            const coord = projection([d.lng, d.lat])
-            svg.append('circle')
-                .attr('r', 2)
-                .attr('cx', coord[0])
-                .attr('cy', coord[1])
-                .attr('fill', 'red');
-        }
-    });
+    // 随机挑选两个城市
+    const cities = areas.filter(d => d.level === 'city');
+    const randomCity = () => {
+        const city = cities[Math.round(Math.random() * cities.length)];
+        const coord = projection([city.lng, city.lat]);
+        city.position = new Vector2(coord[0], coord[1]);
+        return city;
+    };
+    const markCity = (city) => {
+        console.log(city);
+        svg.append('circle')
+            .attr('r', 2)
+            .attr('cx', city.position.x)
+            .attr('cy', city.position.y)
+            .attr('fill', 'red');
+    };
+    const connectCity = (start, end) => {
+        markCity(start);
+        markCity(end);
+
+        const d = start.position.clone().sub(end.position).length() / 6;
+        const b = makeBPoint(start.position, end.position, d);
+
+        const t = 0.5;
+        const ut = utils.u(t);
+        const c = start.position.clone().multiplyScalar(ut).add(end.position.clone().multiplyScalar(1 - ut));
+
+        const ratio = utils.ratio(t);
+        const a = b.clone().sub(c.clone().sub(b).divideScalar(ratio));
+
+        svg.append('path')
+            .classed('line', true)
+            .attr('fill', 'none')
+            .attr('stroke', `url('#start')`)
+            .attr('d', `M ${start.position.x} ${start.position.y} Q ${a.x} ${a.y} ${end.position.x} ${end.position.y}`);
+    };
+
+    const city1 = randomCity();
+    for(let i = 0; i < 50; i++) {
+        const city2 = randomCity();
+        if (city2.name === city1.name) continue;
+        connectCity(city2, city1);
+    }
+    
 });
 </script>
