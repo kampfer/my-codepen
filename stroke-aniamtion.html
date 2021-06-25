@@ -1,0 +1,66 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+    }
+</style>
+
+
+<script type="module">
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.create('svg')
+        .attr('viewBox', [0, 0, width, height])
+        .attr('width', width)
+        .attr('height', height);
+
+    document.body.appendChild(svg.node());
+
+    const pathSelection1 = svg.append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'red')
+        .attr('d', `M 100 100 Q 500 320 599 884`);
+
+    const pathSelection2 = svg.append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'green')
+        .attr('d', `M 100 100 Q 500 320 599 884`);
+
+    const pathSelection3 = svg.append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'blue')
+        .attr('d', `M 100 100 Q 500 320 599 884`);
+
+    const length = pathSelection1.node().getTotalLength();
+
+    pathSelection1.attr('stroke-dasharray', `${length} ${length}`)
+        .attr('stroke-dashoffset', length)
+        .transition()
+        .duration(1000 * 2)
+        .attr('stroke-dashoffset', 0)
+    pathSelection2.attr('stroke-dasharray', `${length} ${length}`)
+        .attr('stroke-dashoffset', length)
+        .transition()
+        .duration(1000 * 2)
+        .attr('stroke-dashoffset', length / 3)
+    pathSelection3.attr('stroke-dasharray', `${length} ${length}`)
+        .attr('stroke-dashoffset', length)
+        .transition()
+        .duration(1000 * 2)
+        .attr('stroke-dashoffset', length / 3 * 2)
+
+    const pathSelection4 = svg.append('path')
+        .attr('fill', 'none')
+        .attr('stroke', 'red')
+        .attr('d', `M 300 500 Q 500 320 599 884`);
+
+    pathSelection4.attr('stroke-dasharray', `10 10`)
+        .attr('stroke-dashoffset', 0)
+        .transition()
+        .duration(1000 * 10)
+        .ease(d3.easeLinear)
+        .attr('stroke-dashoffset', -length)
+</script>
