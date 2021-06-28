@@ -1,0 +1,26 @@
+<style>
+    svg{width:90vh}
+rect {
+  stroke: url(#gradient1);
+  }
+</style>
+
+<svg viewBox="0 0 500 300">
+    <defs>
+      <linearGradient id="gradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#00bc9b">
+          <animate attributeName="stop-color" attributeType="CSS" values="#00bc9b;#333;#00bc9b;" dur="5s" repeatCount="indefinite"></animate>
+        </stop>
+        <stop offset="100%" stop-color="#5eaefd">
+          <animate attributeName="stop-color" attributeType="CSS" values="#5eaefd;#f00;#5eaefd;" dur="5s" repeatCount="indefinite"></animate>
+        </stop>
+      </linearGradient>
+     
+    </defs>
+    <rect width="400" height="200" x="10" y="20" 
+          stroke-width="20" 
+          fill="transparent"
+          >
+    </rect>
+    <path d="M 10 20 Q 400 40 450 250" stroke="url(#gradient1)" fill="none"></path>
+  </svg>

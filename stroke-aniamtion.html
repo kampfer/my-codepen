@@ -19,48 +19,135 @@
 
     document.body.appendChild(svg.node());
 
-    const pathSelection1 = svg.append('path')
-        .attr('fill', 'none')
-        .attr('stroke', 'red')
-        .attr('d', `M 100 100 Q 500 320 599 884`);
+    const linearGradients = [
+        {
+            name: 'start',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '25%',
+                    stopColor: '#0079c6'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#fff'
+                }
+            ]
+        },
+        {
+            name: 'mid',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#fff'
+                },
+                {
+                    offset: '25%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '50%',
+                    stopColor: '#0079c6'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#fff'
+                }
+            ]
+        },
+        {
+            name: 'end',
+            stops: [
+                {
+                    offset: '0%',
+                    stopColor: '#fff'
+                },
+                {
+                    offset: '75%',
+                    stopColor: '#00f5fc'
+                },
+                {
+                    offset: '100%',
+                    stopColor: '#0079c6'
+                }
+            ]
+        }
+    ];
+
+    svg.append('defs')
+        .selectAll('linearGradient')
+        .data(linearGradients)
+        .join('linearGradient')
+            .attr('id', d => d.name)
+            .selectAll('stop')
+            .data(d => d.stops)
+            .join('stop')
+            .attr('offset', d => d.offset)
+            .attr('stop-color', d => d.stopColor);
+
+    // const pathSelection1 = svg.append('path')
+    //     .attr('fill', 'none')
+    //     .attr('stroke', 'red')
+    //     .attr('d', `M 100 100 Q 500 320 599 884`);
 
     const pathSelection2 = svg.append('path')
         .attr('fill', 'none')
-        .attr('stroke', 'green')
-        .attr('d', `M 100 100 Q 500 320 599 884`);
+        .attr('stroke', 'url(#start)')
+        .attr('d', `M 100 100 Q 500 320 599 884`)
+        .style('filter', 'drop-shadow(0px 0px 3px green');
 
-    const pathSelection3 = svg.append('path')
-        .attr('fill', 'none')
-        .attr('stroke', 'blue')
-        .attr('d', `M 100 100 Q 500 320 599 884`);
+    // const pathSelection3 = svg.append('path')
+    //     .attr('fill', 'none')
+    //     .attr('stroke', 'blue')
+    //     .attr('d', `M 100 100 Q 500 320 599 884`);
 
-    const length = pathSelection1.node().getTotalLength();
+    const length = pathSelection2.node().getTotalLength();
 
-    pathSelection1.attr('stroke-dasharray', `${length} ${length}`)
-        .attr('stroke-dashoffset', length)
-        .transition()
-        .duration(1000 * 2)
-        .attr('stroke-dashoffset', 0)
-    pathSelection2.attr('stroke-dasharray', `${length} ${length}`)
-        .attr('stroke-dashoffset', length)
-        .transition()
-        .duration(1000 * 2)
-        .attr('stroke-dashoffset', length / 3)
-    pathSelection3.attr('stroke-dasharray', `${length} ${length}`)
-        .attr('stroke-dashoffset', length)
-        .transition()
-        .duration(1000 * 2)
-        .attr('stroke-dashoffset', length / 3 * 2)
+    svg.append('style').text(`
+        @keyframes aim1 {
+            from {
+                stroke-dashoffset: 0;
+            }
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+    `).lower();
+
+    // pathSelection1.attr('stroke-dasharray', `${length} ${length}`)
+    //     .attr('stroke-dashoffset', length)
+    //     .transition()
+    //     .duration(1000 * 2)
+    //     .attr('stroke-dashoffset', 0)
+    // pathSelection2.attr('stroke-dasharray', `${length} ${length}`)
+    //     .attr('stroke-dashoffset', length)
+    //     .transition()
+    //     .duration(1000 * 2)
+    //     .attr('stroke-dashoffset', length / 3)
+    // pathSelection3.attr('stroke-dasharray', `${length} ${length}`)
+    //     .attr('stroke-dashoffset', length)
+    //     .transition()
+    //     .duration(1000 * 2)
+    //     .attr('stroke-dashoffset', length / 3 * 2)
 
     const pathSelection4 = svg.append('path')
         .attr('fill', 'none')
-        .attr('stroke', 'red')
-        .attr('d', `M 300 500 Q 500 320 599 884`);
+        .attr('stroke', 'white')
+        .attr('d', `M 100 100 Q 500 320 599 884`);
 
-    pathSelection4.attr('stroke-dasharray', `10 10`)
+    pathSelection4.attr('stroke-dasharray', `10 50`)
         .attr('stroke-dashoffset', 0)
-        .transition()
-        .duration(1000 * 10)
-        .ease(d3.easeLinear)
-        .attr('stroke-dashoffset', -length)
+        // .style('')
+        // .style('animation', 'aim1')
+        // .transition()
+        // .duration(1000 * 10)
+        // .ease(d3.easeLinear)
+        // .attr('stroke-dashoffset', -length)
+
+    pathSelection4
+        .style('animation', 'aim1 linear infinite 3s')
+        .style('filter', 'drop-shadow(0px 0px 3px #fff)');
 </script>
