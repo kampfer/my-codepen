@@ -1,0 +1,201 @@
+<!-- <script src="./assets/three.js"></script> -->
+<!-- <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script> -->
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "./assets/three.module.js"
+        }
+    }
+</script>
+
+<style>
+    body { padding: 0; margin: 0; }
+    svg { display: block; }
+</style>
+
+<body></body>
+
+<script type="module">
+    import { OrbitControls } from './assets/OrbitControls.js';
+    import * as THREE from 'three';
+
+    const SCREEN_WIDTH = window.innerWidth;
+    const SCREEN_HEIGHT = window.innerHeight;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+    renderer.setClearAlpha(0);
+    document.body.appendChild(renderer.domElement);
+
+    // const camera = new THREE.PerspectiveCamera(75, SCREEN_WIDTH / SCREEN_HEIGHT, 0.01, 10000);
+    const camera = new THREE.OrthographicCamera( SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -100, 10000 );
+    camera.position.z = 100;
+    camera.position.y = -150;
+    camera.updateMatrixWorld();
+
+    const orbit = new OrbitControls( camera, renderer.domElement );
+    // orbit.enableZoom = false;
+
+    const scene = new THREE.Scene();
+    // scene.background = new THREE.Color( 'rgba(255, 255, 255, 1)' );
+
+    const lights = [];
+    lights[ 0 ] = new THREE.PointLight( 0xffffff, 0.1, 0 );
+    lights[ 1 ] = new THREE.PointLight( 0xffffff, 0.1, 0 );
+    lights[ 2 ] = new THREE.PointLight( 0xffffff, 0.1, 0 );
+
+    lights[ 0 ].position.set( 0, 200, 0 );
+    lights[ 1 ].position.set( 100, 200, 100 );
+    lights[ 2 ].position.set( 0, 200, -100 );
+
+    scene.add( lights[ 0 ] );
+    scene.add( lights[ 1 ] );
+    scene.add( lights[ 2 ] );
+
+    // const light = new THREE.AmbientLight( 0xffffff ); // soft white light
+    // light.position.set(0, 200, 0);
+    // scene.add( light );
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const data = [100, 200, 300, 400, 500, 600];
+    const total = data.reduce((prev, cur) => prev + cur, 0);
+    const colors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9', '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'];
+    const r = 100;
+    const depth = 50;
+    let usedRadian = 0;
+    // const centers = [];
+    const pies = [];
+    data.forEach((v, i) => {
+        const start = usedRadian;
+        const end = usedRadian + v / total * Math.PI * 2;
+
+        usedRadian = end;
+
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+
+        const cos = Math.cos(start);
+        const sin = Math.sin(start);
+        shape.lineTo(cos * r, sin * r);
+
+        shape.absarc(0, 0, r, start, end);
+
+        const extrudeSettings = {
+            depth, 
+            bevelEnabled: true,
+            // bevelThickness: 1,
+            // bevelSize: 1,
+            // bevelOffset: 0,
+            // bevelSegments: 3
+        };
+        const geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+        const meshMaterial = new THREE.MeshPhongMaterial( { color: colors[i], emissive: colors[i], side: THREE.DoubleSide, flatShading: false } );
+        const mesh = new THREE.Mesh(geometry, meshMaterial);
+        group.add(mesh);
+
+        const box = new THREE.BoxHelper( mesh, 0xffff00 );
+        scene.add( box );
+
+        pies.push({
+            start,
+            end,
+            center: start + (end - start) / 2,
+            mesh,
+            r,
+            depth
+        });
+    });
+
+    // console.log(group.computeBoundingBox());
+    const r1 = worldToScreen(new THREE.Vector3(r, 0, 0));
+    mark(r1);
+    const len = r1.clone().sub(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2)).length();
+    console.log(len)
+
+    // const gap = 24;
+    // const count = Math.floor(window.innerHeight / gap);
+    // const legendLength1 = 10;
+    // pies.forEach((pie, i) => {
+    //     // let p2;
+    //     // let minLen = Infinity;
+    //     // const t0 = worldToScreen(p1);
+    //     // let index;
+    //     // for(let i = 0; i < count; i++) {
+    //     //     const t1 = new THREE.Vector2(0, gap / 2 + i * gap);
+    //     //     const t2 = new THREE.Vector2(window.innerWidth, gap / 2 + i * gap);
+    //     //     const len1 = t1.clone().sub(t0).length();
+    //     //     const len2 = t2.clone().sub(t0).length();
+    //     //     if (len1 < minLen) {
+    //     //         minLen = len1;
+    //     //         p2 = t1;
+    //     //         index = i;
+    //     //     }
+    //     //     if (len2 < minLen) {
+    //     //         minLen = len2;
+    //     //         p2 = t2;
+    //     //         index = i + count;
+    //     //     }
+    //     // }
+    //     // p2 = screenToWorld(p2);
+    //     // p2.z = p0.z;
+    //     // console.log(index);
+
+    //     const cos2 = Math.cos(pie.center);
+    //     const sin2 = Math.sin(pie.center);
+    //     const p0 = new THREE.Vector3(cos2 * r, sin2 * r, pie.center < Math.PI ? depth : 0);
+    //     const p1 = new THREE.Vector3(cos2 * r * 1.5, sin2 * r * 1.5, p0.z);
+    //     const lineMaterial = new THREE.LineBasicMaterial({
+    //         color: colors[i]
+    //     });
+    //     const lineGeometry = new THREE.BufferGeometry().setFromPoints([p0, p1]);
+    //     const line = new THREE.Line( lineGeometry, lineMaterial );
+    //     group.add(line);
+
+    //     pie.legendLine = line;
+    // });
+    // console.log(pies);
+
+    function mark(ret) {
+        const div = document.createElement('div');
+        div.style.position = 'absolute';
+        div.style.left = `${ret.x}px`;
+        div.style.top = `${ret.y}px`;
+        div.style.width = '1px';
+        div.style.height = '1px';
+        div.style.backgroundColor = 'black';
+        document.body.appendChild(div);
+    }
+
+    function render() {
+
+        requestAnimationFrame( render );
+
+        renderer.render( scene, camera );
+
+    }
+
+    function worldToScreen(vec3) {
+        const width = window.innerWidth / 2;
+        const height = window.innerHeight / 2;
+        const sVec = vec3.clone().project(camera);
+        return new THREE.Vector2(
+            width * sVec.x + width, 
+            -height * sVec.y + height
+        );
+    }
+
+    function screenToWorld(vec2) {
+        const ret = new THREE.Vector3(
+            vec2.x / window.innerWidth * 2 - 1,
+            -vec2.y / window.innerHeight * 2 + 1,
+            0.5
+        ).unproject(camera);
+        ret.z = 0;
+        return ret;
+    }
+
+    render();
+</script>

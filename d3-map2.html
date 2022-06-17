@@ -1,0 +1,73 @@
+<script src="./assets/d3.v6.js"></script>
+
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+    }
+    svg {
+        transform: rotateX(45deg);
+    }
+</style>
+
+<script>
+// Promise.all([
+//     d3.json('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json'),
+//     d3.json('https://geo.datav.aliyun.com/areas_v3/bound/all.json'),
+// ]).then(([chinaMap, areas]) => {
+d3.json('./130000.json').then(map => {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.create('svg')
+        .attr('viewBox', [0, 0, width, height])
+        .attr('width', width)
+        .attr('height', height);
+
+    document.body.appendChild(svg.node());
+
+    // https://www.imooc.com/wenda/detail/605184
+    const projection = d3.geoIdentity()
+        .reflectY(true)
+        .fitExtent([[0, 0], [width, height]], map);
+
+    const geoPath = d3.geoPath(projection);
+
+    svg.selectAll('path')
+        .data(map.features)
+        .join('path')
+            .attr('d', geoPath)
+            .attr('fill-opacity', '0')
+            .attr('stroke', '#000')
+            .on('mouseenter', function() {
+                d3.select(this).style('box-shadow', 'inset 0px 0px 50px 1px red');
+                    // .attr('stroke', 'red')
+                    // .attr('filter', 'url(#inset-shadow)')
+            })
+            .on('mouseleave', function(e) {
+                // d3.select(this).style('box-shadow', 'none');
+                    // .attr('stroke', '#000')
+
+                    // .attr('filter', 'none')
+            });
+
+    const cities = map.features.map(d => {
+        return {
+            name: d.properties.name,
+            position: projection(d.properties.center)
+        }
+    });
+
+    svg.selectAll('g.city')
+        .data(cities)
+        .join(enter => {
+            const selection = enter.append('g');
+            selection.append('circle').attr('fill', '#aa0000').attr('stroke', '#ff0000').attr('r', 10);
+            selection.append('circle');
+            return selection;
+        })
+            .classed('city', true)
+            .attr('transform', d => `translate(${d.position[0]}, ${d.position[1]})`);
+
+});
+</script>
