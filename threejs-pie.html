@@ -32,10 +32,12 @@
     const camera = new THREE.OrthographicCamera( SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -100, 10000 );
     camera.position.z = 100;
     camera.position.y = -150;
-    camera.updateMatrixWorld();
 
     const orbit = new OrbitControls( camera, renderer.domElement );
     // orbit.enableZoom = false;
+
+    // orbit初始化之后貌似修改了camera位置和朝向信息，所以需要在这里更新matrix
+    camera.updateMatrixWorld();
 
     const scene = new THREE.Scene();
     // scene.background = new THREE.Color( 'rgba(255, 255, 255, 1)' );
@@ -96,8 +98,8 @@
         const mesh = new THREE.Mesh(geometry, meshMaterial);
         group.add(mesh);
 
-        const box = new THREE.BoxHelper( mesh, 0xffff00 );
-        scene.add( box );
+        // const box = new THREE.BoxHelper( mesh, 0xffff00 );
+        // scene.add( box );
 
         pies.push({
             start,
